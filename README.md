@@ -1,68 +1,128 @@
-# Running the test network
+# hyperledger-fabric-generic-network
 
-You can use the `./network.sh` script to stand up a simple Fabric test network. The test network has two peer organizations with one peer each and a single node raft ordering service. You can also use the `./network.sh` script to create channels and deploy chaincode. For more information, see [Using the Fabric test network](https://hyperledger-fabric.readthedocs.io/en/latest/test_network.html). The test network is being introduced in Fabric v2.0 as the long term replacement for the `first-network` sample.
+A simple and generic hyperledger fabric network that runs with Raft consensus and TLS enabled.
+It deploys a network with:
 
-If you are planning to run the test network with consensus type BFT then please pass `-bft` flag as input to the `network.sh` script when creating the channel. Note that currently this sample does not yet support the use of consensus type BFT and CA together.
-That is to create a network use:
-```bash
-./network.sh up -bft
-```
+    - 1 Certificate Authority
+    - 3 orderers for the raft consensus to work nicely
+    - 1 Peer
+    - 1 CouchDB
+    - 1 CLI
 
-To create a channel use:
+** For working with privateData, you must deploy a second peer  
 
-```bash
-./network.sh createChannel -bft
-```
+Pre Requisites:
+Refer to https://hyperledger-fabric.readthedocs.io/en/release-1.4/prereqs.html
 
-To restart a running network use:
+Requires versions 12.19 of node and 6.14.8 npm to be installed
 
-```bash
-./network.sh restart -bft
-```
+This network work only on Fabric 2.3 and it is up to production standards using Raft and TLS for secure communication
 
-Note that running the createChannel command will start the network, if it is not already running.
+To deploy a network simply run the command "./deploy.sh" in your terminal and tpye in the following information
+as it asks you in an interactive mode:
 
-Before you can deploy the test network, you need to follow the instructions to [Install the Samples, Binaries and Docker Images](https://hyperledger-fabric.readthedocs.io/en/latest/install.html) in the Hyperledger Fabric documentation.
+    - Organization Name
+    - Organization Domain
+    - Host computers IP Address
 
-## Using the Peer commands
+Example:
+./deploy.sh
 
-The `setOrgEnv.sh` script can be used to set up the environment variables for the organizations, this will help to be able to use the `peer` commands directly.
+Organization Name: Org1
 
-First, ensure that the peer binaries are on your path, and the Fabric Config path is set assuming that you're in the `test-network` directory.
+Organization Domain: org1.com
 
-```bash
- export PATH=$PATH:$(realpath ../bin)
- export FABRIC_CFG_PATH=$(realpath ../config)
-```
-
-You can then set up the environment variables for each organization. The `./setOrgEnv.sh` command is designed to be run as follows.
-
-```bash
-export $(./setOrgEnv.sh Org2 | xargs)
-```
-
-(Note bash v4 is required for the scripts.)
-
-You will now be able to run the `peer` commands in the context of Org2. If a different command prompt, you can run the same command with Org1 instead.
-The `setOrgEnv` script outputs a series of `<name>=<value>` strings. These can then be fed into the export command for your current shell.
-
-## Chaincode-as-a-service
-
-To learn more about how to use the improvements to the Chaincode-as-a-service please see this [tutorial](./test-network/../CHAINCODE_AS_A_SERVICE_TUTORIAL.md). It is expected that this will move to augment the tutorial in the [Hyperledger Fabric ReadTheDocs](https://hyperledger-fabric.readthedocs.io/en/release-2.4/cc_service.html)
+Computer IP Address: 192.168.0.0
 
 
-## Podman
+To get the host computers ip address, you can run "hostname -I"
 
-*Note - podman support should be considered experimental but the following has been reported to work with podman 4.1.1 on Mac. If you wish to use podman a LinuxVM is recommended.*
+If you encounter the error
 
-Fabric's `install-fabric.sh` script has been enhanced to support using `podman` to pull down images and tag them rather than docker. The images are the same, just pulled differently. Simply specify the 'podman' argument when running the `install-fabric.sh` script. 
+"Error: could not assemble transaction, err proposal response was not successful, error code 500, msg error starting container: error starting container: API error (404): network hyperledger-fabric-generic-network_fabric not found"
 
-Similarly, the `network.sh` script has been enhanced so that it can use `podman` and `podman-compose` instead of docker. Just set the environment variable `CONTAINER_CLI` to `podman` before running the `network.sh` script:
+Then you must change the environment variable in the Peer Service in the the docker-compose.yml
 
-```bash
-CONTAINER_CLI=podman ./network.sh up
-````
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=hyperledgerfabricgenericnetwork_fabric
 
-As there is no Docker-Daemon when using podman, only the `./network.sh deployCCAAS` command will work. Following the Chaincode-as-a-service Tutorial above should work. 
+Add or Remove Organization Script
+
+File: add-remove-org.sh
+
+This file adds an organization or removes it from a given channel. There are three files required:
+
+    - server.crt (The new organizations orderer tls)
+
+    - newOrg.json (The json that contains the new organizations peer's public keys, generated by the command "configtxgen -printOrg")
+
+    - newOrgORderer.json (The json that contains the new organizations orderer's public keys, generated by the command "configtxgen -printOrg")
+
+The script must be run from within the CLI container and the three files in the same root folder as the script file.
+
+To add an organization, run the script with the following parameters:
+
+    - ./add-remove-org.sh add ORG_NAME ORG_IP admin_org_domain CHANNEL_NAME AdminOrgName
+
+To remove an organization
+
+    - ./add-remove-org.sh remove ORG_NAME ORG_IP admin_org_domain CHANNEL_NAME AdminOrgName
+
+Node Client
+
+The node client is used to transact with the network using POST requests
+
+The client API uses NodeExpress and uses port 3000. If you want to use Kong, just change the port to 8000
 
 
+The first step is to enroll the admin
+
+Endpoint: http://localhost:3000/enrollAdmin
+
+
+The second step is to register a user to interact with the network
+
+Endpoint: http://localhost:3000/registerUser
+
+JSON payload to send:
+
+{ "user": "userName" }
+
+
+There are two functions currently implemented:
+
+
+Invoke the chaincode and create a transaction in the network
+
+Endpoint: http://localhost:3000/invoke
+
+JSON Payload to send:
+
+{ "user": "userName", "key": "KeyForData", "data": "any data" }
+
+
+Query the blockchain
+
+Endpoint: http://localhost:3000/query
+
+{ "user": "userName", "key": "KeyForData", }
+
+I am not responsible for the misuse of this generic code nor any damages that may occurr from improper use or development.
+This code is open source and free for anyone to use for any type of project or application under the Apache-2.0 license
+
+
+Feel free to email me with questions or suggestions
+
+Contact:
+nlzanutim@yahoo.com
+
+Donations are welcome as I intend on continuing to contribute to the community
+
+Bitcoin: bc1qndlhlznpcqp63hacj4w28ph6vxjzua942ftqse
+
+Litecoin: ltc1q2vzn2ztts5lf8am4h5paukjv8xha5ajte8rpg2
+
+Monero: 45yWqAH7ynhGUXtwx2nuNn14avPXNcdTwfa1aWbU5tbm1oBtiVCLo4fSD83nG6K5JeC1kwtLRbWqsadtCuodXeYnStbMtGw
+
+Dogecoin: DR6tUDs8YKbfqiRSwtN5fXATr9YNHGbXQY
+
+Ethereum: 0x4F6e88c170F438EC2529f6bbA921c0236b3b45c4
