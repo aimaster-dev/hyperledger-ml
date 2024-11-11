@@ -40,7 +40,7 @@ fabric-ca-client enroll -d -u https://Admin@peer.$COMPANY_DOMAIN:$PEER_PASSWORD@
 fabric-ca-client getcainfo -u https://$CA_ADDRESS_PORT -M $PEER_DIRECTORY/msp
 
 # AdminCerts --peer org
-fabric-ca-client certificate list --id Admin@peer.$COMPANY_DOMAIN --store $PEER_DIRECTORY/msp/admincerts
+fabric-ca-client certificate list --id Admin@peer.$COMPANY_DOMAIN --store
 
 # tlscacerts --peer org
 fabric-ca-client getcacert -u https://$CA_ADDRESS_PORT -M $PEER_DIRECTORY/msp --csr.hosts peer.$COMPANY_DOMAIN,$IP_ADDRESS --enrollment.profile tls
