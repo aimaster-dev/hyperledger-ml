@@ -90,14 +90,6 @@ sleep 3
 
 docker exec cli osnadmin channel join -o orderer.$DOMAIN_OF_ORGANIZATION:7053 --channelID ${ORGANIZATION_NAME_LOWERCASE}channel --config-block /etc/hyperledger/artifacts/channel.tx --ca-file /etc/hyperledger/crypto-config/ordererOrganizations/orderers/orderer.${DOMAIN_OF_ORGANIZATION}/tls/ca.crt --client-cert /etc/hyperledger/crypto-config/ordererOrganizations/orderers/orderer.${DOMAIN_OF_ORGANIZATION}/tls/server.crt --client-key /etc/hyperledger/crypto-config/ordererOrganizations/orderers/orderer.$DOMAIN_OF_ORGANIZATION/tls/server.key 
 
-# sleep 3
-
-# docker exec cli peer channel fetch 0 channel.block -c ${ORGANIZATION_NAME_LOWERCASE}channel -o orderer.${DOMAIN_OF_ORGANIZATION}:7050 --tls --cafile /etc/hyperledger/crypto-config/ordererOrganizations/orderers/orderer.${DOMAIN_OF_ORGANIZATION}/tls/ca.crt
-
-# docker exec cli peer channel join -b channel.block
-
-# mkdir identityFiles
-
 # # Generate json identities to send to admin org to enter a channel
 # ./configtxgen -printOrg ${NAME_OF_ORGANIZATION}MSP > identityFiles/${NAME_OF_ORGANIZATION}MSP.json
 # ./configtxgen -printOrg ${NAME_OF_ORGANIZATION}OrdererMSP > identityFiles/${NAME_OF_ORGANIZATION}OrdererMSP.json
